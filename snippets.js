@@ -18,6 +18,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   savingEnabled: true,
   maxHistory: 200,
   includeMarkdownHeader: true,
+  buttonLabel: 'Copy',
+  buttonCss: '',
+  ignoredSites: [],
   sanitize: {
     stripPrompts: true,
     stripLineNumbers: true,

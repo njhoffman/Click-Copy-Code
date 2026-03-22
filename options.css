@@ -65,6 +65,21 @@ fieldset {
     margin-top: 10px;
 }
 
+.button-settings,
+.ignored-sites {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.button-settings textarea,
+.ignored-sites textarea {
+    font-family: monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
 button {
     padding: 8px 16px;
     border: none;

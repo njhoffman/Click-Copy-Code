@@ -63,6 +63,9 @@
     savingEnabled: true,
     includeMarkdownHeader: true,
     maxHistory: 200,
+    buttonLabel: 'Copy',
+    buttonCss: '',
+    ignoredSites: [],
     sanitize: {
       stripPrompts: true,
       stripLineNumbers: true,
@@ -303,11 +306,30 @@
 
     async init() {
       await this.loadState();
+      if (this.isCurrentSiteIgnored()) {
+        return;
+      }
       this.ensureToast();
       this.registerCopyTriggers();
       this.registerShortcut();
       this.registerMessageListener();
       this.registerStorageListener();
+    }
+
+    isCurrentSiteIgnored() {
+      const patterns = this.settings.ignoredSites;
+      if (!Array.isArray(patterns) || patterns.length === 0) {
+        return false;
+      }
+      const url = window.location.href;
+      return patterns.some((pattern) => {
+        try {
+          return new RegExp(pattern).test(url);
+        } catch (e) {
+          console.warn('Click Copy Code: invalid ignored site pattern', pattern, e);
+          return false;
+        }
+      });
     }
 
     async loadState() {
@@ -421,10 +443,14 @@
       const container = document.createElement('div');
       container.className = 'ccc-btn-container';
 
-      const copyBtn = this.createButton('Copy', 'ccc-copy-btn', (event) => {
+      const label = this.settings.buttonLabel || 'Copy';
+      const copyBtn = this.createButton(label, 'ccc-copy-btn', (event) => {
         event.stopPropagation();
         this.copyFromElement(target);
       });
+      if (this.settings.buttonCss) {
+        copyBtn.style.cssText += this.settings.buttonCss;
+      }
       container.appendChild(copyBtn);
 
       if (this.shouldShowSaveButton()) {

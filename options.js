@@ -86,6 +86,9 @@ class OptionsController {
     this.elements.stripLineNumbers = document.getElementById('stripLineNumbers');
     this.elements.stripComments = document.getElementById('stripComments');
     this.elements.stripEmptyLines = document.getElementById('stripEmptyLines');
+    this.elements.buttonLabel = document.getElementById('buttonLabel');
+    this.elements.buttonCss = document.getElementById('buttonCss');
+    this.elements.ignoredSites = document.getElementById('ignoredSites');
     this.elements.gistEnable = document.getElementById('gistEnable');
     this.elements.gistToken = document.getElementById('gistToken');
     this.elements.llmEnable = document.getElementById('llmEnable');
@@ -142,6 +145,11 @@ class OptionsController {
     this.elements.enableSaving.checked = sanitized.savingEnabled;
     this.elements.maxHistory.value = sanitized.maxHistory;
     this.elements.includeMarkdownHeader.checked = sanitized.includeMarkdownHeader !== false;
+    this.elements.buttonLabel.value = sanitized.buttonLabel || 'Copy';
+    this.elements.buttonCss.value = sanitized.buttonCss || '';
+    this.elements.ignoredSites.value = Array.isArray(sanitized.ignoredSites)
+      ? sanitized.ignoredSites.join('\n')
+      : '';
 
     const sanitizeOptions = sanitized.sanitize || {};
     this.elements.stripPrompts.checked = sanitizeOptions.stripPrompts !== false;
@@ -224,6 +232,12 @@ class OptionsController {
       savingEnabled: this.elements.enableSaving.checked,
       maxHistory: this.getValidHistory(),
       includeMarkdownHeader: this.elements.includeMarkdownHeader.checked,
+      buttonLabel: this.elements.buttonLabel.value.trim() || 'Copy',
+      buttonCss: this.elements.buttonCss.value,
+      ignoredSites: this.elements.ignoredSites.value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean),
       sanitize: this.getSanitizeSettings(),
       integrations: this.getIntegrationsSettings(),
     };
