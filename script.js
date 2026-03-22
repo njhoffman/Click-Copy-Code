@@ -276,6 +276,39 @@
     return `\`\`\`${language}\n${commentLine}\n${codeSection}\`\`\``;
   }
 
+  function formatCopyAll(snippets) {
+    return snippets
+      .map((s) => {
+        const lang = s.language || '';
+        let code = s.code || '';
+        if (code && !code.endsWith('\n')) {
+          code += '\n';
+        }
+        return `\`\`\`${lang}\n${code}\`\`\``;
+      })
+      .join('\n\n');
+  }
+
+  function formatCopyCombined(snippets) {
+    const groups = new Map();
+    snippets.forEach((s) => {
+      const lang = s.language || '';
+      if (!groups.has(lang)) {
+        groups.set(lang, []);
+      }
+      groups.get(lang).push(s.code || '');
+    });
+    const blocks = [];
+    groups.forEach((codes, lang) => {
+      let merged = codes.join('\n');
+      if (merged && !merged.endsWith('\n')) {
+        merged += '\n';
+      }
+      blocks.push(`\`\`\`${lang}\n${merged}\`\`\``);
+    });
+    return blocks.join('\n\n');
+  }
+
   function isEditableElement(element) {
     return element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.isContentEditable);
   }
@@ -514,6 +547,57 @@
       }
     }
 
+    collectAllSnippets() {
+      const seen = new Set();
+      const snippets = [];
+      document.querySelectorAll('pre, code').forEach((el) => {
+        if (el.tagName.toLowerCase() === 'code' && el.closest('pre')) {
+          return;
+        }
+        if (seen.has(el)) {
+          return;
+        }
+        seen.add(el);
+        snippets.push(prepareSnippet(el, this.settings));
+      });
+      return snippets;
+    }
+
+    async handleCopyAll() {
+      const snippets = this.collectAllSnippets();
+      if (snippets.length === 0) {
+        this.showMsg('No code blocks found on this page.');
+        return;
+      }
+      const payload = formatCopyAll(snippets);
+      try {
+        await this.writeToClipboard(payload);
+        this.showMsg(`Copied ${snippets.length} code block(s)!`);
+      } catch (error) {
+        console.error('Click Copy Code: failed to copy all', error);
+        this.showMsg('Failed to copy code blocks.');
+      }
+    }
+
+    async handleCopyCombined() {
+      const snippets = this.collectAllSnippets();
+      if (snippets.length === 0) {
+        this.showMsg('No code blocks found on this page.');
+        return;
+      }
+      const payload = formatCopyCombined(snippets);
+      const blockCount = Object.keys(
+        snippets.reduce((acc, s) => { acc[s.language || ''] = true; return acc; }, {}),
+      ).length;
+      try {
+        await this.writeToClipboard(payload);
+        this.showMsg(`Combined ${snippets.length} block(s) into ${blockCount} language group(s)!`);
+      } catch (error) {
+        console.error('Click Copy Code: failed to copy combined', error);
+        this.showMsg('Failed to copy code blocks.');
+      }
+    }
+
     createButton(label, className, handler) {
       const btn = document.createElement('button');
       btn.className = `ccc-action-btn ${className}`;
@@ -598,19 +682,38 @@
         return;
       }
       runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (!message || message.action !== 'copy-code') {
+        if (!message || !message.action) {
           return;
         }
-        if (this.copyActive && this.lastContextTarget) {
-          this.copyFromElement(this.lastContextTarget).then((success) => {
+        if (message.action === 'copy-code') {
+          if (this.copyActive && this.lastContextTarget) {
+            this.copyFromElement(this.lastContextTarget).then((success) => {
+              if (typeof sendResponse === 'function') {
+                sendResponse({ success });
+              }
+            });
+            return true;
+          }
+          if (typeof sendResponse === 'function') {
+            sendResponse({ success: false });
+          }
+          return undefined;
+        }
+        if (message.action === 'copy-all') {
+          this.handleCopyAll().then(() => {
             if (typeof sendResponse === 'function') {
-              sendResponse({ success });
+              sendResponse({ success: true });
             }
           });
           return true;
         }
-        if (typeof sendResponse === 'function') {
-          sendResponse({ success: false });
+        if (message.action === 'copy-combined') {
+          this.handleCopyCombined().then(() => {
+            if (typeof sendResponse === 'function') {
+              sendResponse({ success: true });
+            }
+          });
+          return true;
         }
         return undefined;
       });

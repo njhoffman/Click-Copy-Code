@@ -93,6 +93,16 @@ chrome.runtime.onInstalled.addListener(() => {
     title: 'Copy Code',
     contexts: ['all'],
   });
+  chrome.contextMenus.create({
+    id: 'ccc-copyAll',
+    title: 'Copy All Code Blocks',
+    contexts: ['all'],
+  });
+  chrome.contextMenus.create({
+    id: 'ccc-copyCombined',
+    title: 'Copy Combined Code Blocks',
+    contexts: ['all'],
+  });
   initSettingsIfMissing().catch((error) => console.error('Failed to initialise settings on install', error));
 });
 
@@ -104,9 +114,16 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+const CONTEXT_MENU_ACTIONS = {
+  'ccc-copyCode': 'copy-code',
+  'ccc-copyAll': 'copy-all',
+  'ccc-copyCombined': 'copy-combined',
+};
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'ccc-copyCode' && tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { action: 'copy-code' });
+  const action = CONTEXT_MENU_ACTIONS[info.menuItemId];
+  if (action && tab?.id) {
+    chrome.tabs.sendMessage(tab.id, { action });
   }
 });
 

@@ -33,7 +33,7 @@ Options (options.js) <---> Chrome Storage API directly
 
 **Entry points:**
 - `manifest.json` - Extension configuration; content script injected on all URLs at document_end
-- `background.js` - Service worker (ES module). Message routing, context menu, snippet CRUD operations
+- `background.js` - Service worker (ES module). Message routing, context menus (Copy Code, Copy All, Copy Combined), snippet CRUD operations
 - `script.js` - Content script injected into every page. Contains `ClickCopyController` class handling copy interactions, language detection, code sanitization, toast notifications
 - `popup.html/js` - Extension popup showing saved snippets with search/filter/export
 - `options.html/js` - Settings page for interaction mode, theme, sanitization, integrations
@@ -54,3 +54,4 @@ Options (options.js) <---> Chrome Storage API directly
 - Clipboard writing uses Clipboard API with `document.execCommand('copy')` fallback
 - Button label and CSS are customizable via options; applied in `ClickCopyController.addCopyButton()`
 - Ignored sites: regex patterns matched against `window.location.href` during content script init; skips all functionality if matched
+- Context menu "Copy All" collects all `<pre>`/`<code>` blocks on the page into separate fenced code blocks; "Copy Combined" merges blocks sharing the same detected language into a single fenced block per language
